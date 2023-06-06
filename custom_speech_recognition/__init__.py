@@ -519,7 +519,7 @@ class Recognizer(AudioSource):
 
                     # detect whether speaking has started on audio input
                     energy = audioop.rms(buffer, source.SAMPLE_WIDTH)  # energy of the audio signal
-                    if energy > self.energy_threshold: break
+                    if energy > self.energy_threshold and not source.speaker: break
 
                     # dynamically adjust the energy threshold using asymmetric weighted average
                     if self.dynamic_energy_threshold:

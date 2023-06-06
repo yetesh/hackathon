@@ -38,6 +38,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.audio_queue = queue.Queue()
+        self.freeze_state = [False]
 
         user_audio_recorder = AudioRecorder.DefaultMicRecorder()
         user_audio_recorder.record_into_queue(self.audio_queue)
@@ -55,14 +56,14 @@ class MainWindow(QMainWindow):
         transcribe.start()
 
         self.responder = GPTResponder()
-        respond = threading.Thread(target=self.responder.respond_to_transcriber, args=(self.transcriber,))
+        respond = threading.Thread(target=self.responder.respond_to_transcriber, args=(self.transcriber, self.freeze_state))
         respond.daemon = True
         respond.start()
 
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle("Ecoute")
+        self.setWindowTitle("Guardians of Box AI")
         self.setGeometry(100, 100, 1000, 600)
 
         font_size = 20
@@ -90,16 +91,14 @@ class MainWindow(QMainWindow):
         self.freeze_button.clicked.connect(self.freeze_unfreeze)
 
         self.update_interval_slider_label = QLabel(f"Update interval: 2 seconds", self)
-        self.update_interval_slider_label.setGeometry(520, 560, 200, 30)
+        # self.update_interval_slider_label.setGeometry(520, 560, 200, 30)
         self.update_interval_slider_label.setStyleSheet("color: #FFFCF2")
 
         self.update_interval_slider = QSlider(Qt.Horizontal, self)
         self.update_interval_slider.setRange(1, 10)
         self.update_interval_slider.setValue(2)
-        self.update_interval_slider.setGeometry(720, 560, 270, 30)
+        # self.update_interval_slider.setGeometry(720, 560, 270, 30)
         self.update_interval_slider.valueChanged.connect(self.update_interval_changed)
-
-        self.freeze_state = [False]
 
         self.update_transcript_UI(self.transcriber, self.transcript_textbox)
         self.update_response_UI(self.responder, self.response_textbox, self.update_interval_slider_label, self.update_interval_slider, self.freeze_state)
@@ -119,12 +118,11 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(300, lambda: self.update_transcript_UI(transcriber, textbox))
 
     def update_response_UI(self, responder, textbox, update_interval_slider_label, update_interval_slider, freeze_state):
-        if not freeze_state[0]:
-            response = responder.response
-            textbox.setPlainText(response)
-            update_interval = int(update_interval_slider.value())
-            responder.update_response_interval(update_interval)
-            update_interval_slider_label.setText(f"Update interval: {update_interval} seconds")
+        response = responder.response
+        textbox.setPlainText(response)
+        update_interval = int(update_interval_slider.value())
+        responder.update_response_interval(update_interval)
+        update_interval_slider_label.setText(f"Update interval: {update_interval} seconds")
 
         QTimer.singleShot(300, lambda: self.update_response_UI(responder, textbox, update_interval_slider_label, update_interval_slider, freeze_state))
 
